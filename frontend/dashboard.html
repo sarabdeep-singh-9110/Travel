@@ -48,8 +48,8 @@
                     <input type="date" id="endDate" required>
                 </div>
                 <div class="form-group">
-                    <label for="totalBudget">Total Budget ($)</label>
-                    <input type="number" id="totalBudget" required min="1" placeholder="e.g. 2000">
+                    <label for="totalBudget">Total Budget (₹)</label>
+                    <input type="number" id="totalBudget" required min="1" placeholder="e.g. 50000">
                 </div>
                 <div style="display: flex; gap: 1rem; margin-top: 1rem;">
                     <button type="submit" class="btn btn-primary" style="flex: 1;">Save Trip</button>
@@ -132,7 +132,7 @@
                     <div class="trip-info" onclick="window.location.href='trip.html?id=${trip._id}'" style="cursor: pointer; flex: 1;">
                         <h3>${trip.destination}</h3>
                         <p>📅 ${new Date(trip.startDate).toLocaleDateString()} - ${new Date(trip.endDate).toLocaleDateString()}</p>
-                        <p style="margin-top: 0.5rem; font-weight: 600; color: var(--primary-color);">Budget: $${trip.totalBudget}</p>
+                        <p style="margin-top: 0.5rem; font-weight: 600; color: var(--primary-color);">Budget: ₹${trip.totalBudget}</p>
                     </div>
                     <div style="display: flex; gap: 0.5rem;">
                         <button onclick="editTrip('${trip._id}')" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Edit</button>

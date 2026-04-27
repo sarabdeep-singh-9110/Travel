@@ -29,15 +29,15 @@
             </div>
             <div class="card">
                 <h3>Total Budget</h3>
-                <div class="value" id="summary-budget">$0</div>
+                <div class="value" id="summary-budget">₹0</div>
             </div>
             <div class="card">
                 <h3>Spent So Far</h3>
-                <div class="value" id="summary-spent" style="color: var(--error-color);">$0</div>
+                <div class="value" id="summary-spent" style="color: var(--error-color);">₹0</div>
             </div>
             <div class="card">
                 <h3>Remaining</h3>
-                <div class="value" id="summary-remaining" style="color: var(--success-color);">$0</div>
+                <div class="value" id="summary-remaining" style="color: var(--success-color);">₹0</div>
             </div>
         </div>
 
@@ -87,8 +87,8 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="amount">Amount ($)</label>
-                    <input type="number" id="amount" required min="0.01" step="0.01" placeholder="e.g. 50.00">
+                    <label for="amount">Amount (₹)</label>
+                    <input type="number" id="amount" required min="0.01" step="0.01" placeholder="e.g. 500.00">
                 </div>
                 <div class="form-group">
                     <label for="date">Date</label>
@@ -169,7 +169,7 @@
                 }
 
                 document.getElementById('summary-destination').textContent = currentTrip.destination;
-                document.getElementById('summary-budget').textContent = `$${currentTrip.totalBudget}`;
+                document.getElementById('summary-budget').textContent = `₹${currentTrip.totalBudget}`;
                 
                 await loadExpenses();
             } catch (error) {
@@ -221,7 +221,7 @@
                         <td>${exp.category}</td>
                         <td>${new Date(exp.date).toLocaleDateString()}</td>
                         <td>${exp.notes || '-'}</td>
-                        <td style="font-weight: 600;">$${exp.amount.toFixed(2)}</td>
+                        <td style="font-weight: 600;">₹${exp.amount.toFixed(2)}</td>
                         <td>
                             <button onclick='editExpense(${JSON.stringify(exp)})' class="btn btn-outline" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">Edit</button>
                             <button onclick="deleteExpense('${exp._id}')" class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; background: #fee2e2; color: #ef4444;">Delete</button>
@@ -240,7 +240,7 @@
                         item.style.borderRadius = '8px';
                         item.innerHTML = `
                             <div style="font-size: 0.8rem; color: var(--text-light);">${cat}</div>
-                            <div style="font-weight: 600;">$${breakdown[cat].toFixed(2)}</div>
+                            <div style="font-weight: 600;">₹${breakdown[cat].toFixed(2)}</div>
                         `;
                         breakdownList.appendChild(item);
                     }
@@ -248,10 +248,10 @@
             }
 
             // Update Summary Cards
-            document.getElementById('summary-spent').textContent = `$${totalSpent.toFixed(2)}`;
+            document.getElementById('summary-spent').textContent = `₹${totalSpent.toFixed(2)}`;
             const remaining = currentTrip.totalBudget - totalSpent;
             const remainingEl = document.getElementById('summary-remaining');
-            remainingEl.textContent = `$${remaining.toFixed(2)}`;
+            remainingEl.textContent = `₹${remaining.toFixed(2)}`;
             remainingEl.style.color = remaining < 0 ? 'var(--error-color)' : 'var(--success-color)';
         }
 
