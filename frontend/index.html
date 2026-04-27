@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TravelBudget - Plan Your Perfect Trip</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <div class="container">
+            <a href="index.html" class="logo">TravelBudget</a>
+            <div class="nav-links" id="nav-links">
+                <a href="login.html" class="btn btn-outline">Login</a>
+                <a href="signup.html" class="btn btn-primary">Sign Up</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <h1>Plan Your Trip, <br>Track Your Spending.</h1>
+            <p>The simplest way to manage your travel budget. Track expenses, monitor your remaining balance, and enjoy your journey without financial stress.</p>
+            <div class="hero-btns">
+                <a href="signup.html" class="btn btn-primary" style="padding: 1rem 2rem; font-size: 1.1rem;">Get Started for Free</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="features" style="padding: 4rem 0; background: #fff;">
+        <div class="container">
+            <div class="dashboard-grid">
+                <div class="card" style="text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">✈️</div>
+                    <h3>Create Trips</h3>
+                    <p style="color: var(--text-light);">Set destinations, dates, and total budgets for all your upcoming adventures.</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">💰</div>
+                    <h3>Track Expenses</h3>
+                    <p style="color: var(--text-light);">Log every transport, meal, and hotel cost. Never lose track of where your money goes.</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">📊</div>
+                    <h3>Stay on Budget</h3>
+                    <p style="color: var(--text-light);">Visualize your spending patterns and see exactly how much budget you have left.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer style="text-align: center; padding: 2rem; color: var(--text-light);">
+        <p>&copy; 2026 TravelBudget. Built for School Project.</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        // Simple auth check to redirect if already logged in
+        if (localStorage.getItem('token')) {
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>

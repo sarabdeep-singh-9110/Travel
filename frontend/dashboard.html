@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - TravelBudget</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <div class="container">
+            <a href="dashboard.html" class="logo">TravelBudget</a>
+            <div class="nav-links">
+                <span id="user-name" style="font-weight: 500;"></span>
+                <button id="logout-btn" class="btn btn-outline" style="padding: 0.4rem 1rem;">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="trips-header">
+            <h1>My Trips</h1>
+            <button class="btn btn-primary" onclick="showTripModal()">+ New Trip</button>
+        </div>
+
+        <div id="trips-container" class="dashboard-grid">
+            <!-- Trips will be loaded here -->
+            <p id="no-trips" style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-light);">No trips added yet. Start by adding your first trip!</p>
+        </div>
+    </div>
+
+    <!-- Add Trip Modal -->
+    <div id="trip-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="auth-container" style="margin: 0; width: 90%; max-width: 500px;">
+            <h2 id="modal-title">Add New Trip</h2>
+            <form id="trip-form">
+                <input type="hidden" id="trip-id">
+                <div class="form-group">
+                    <label for="destination">Destination</label>
+                    <input type="text" id="destination" required placeholder="e.g. Paris, France">
+                </div>
+                <div class="form-group">
+                    <label for="startDate">Start Date</label>
+                    <input type="date" id="startDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="endDate">End Date</label>
+                    <input type="date" id="endDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="totalBudget">Total Budget ($)</label>
+                    <input type="number" id="totalBudget" required min="1" placeholder="e.g. 2000">
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Save Trip</button>
+                    <button type="button" class="btn btn-outline" onclick="hideTripModal()" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Auth Check
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = 'login.html';
+
+        const userData = JSON.parse(localStorage.getItem('user'));
+        document.getElementById('user-name').textContent = `Hi, ${userData.name}`;
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        });
+
+        // Modal Logic
+        function showTripModal(trip = null) {
+            const modal = document.getElementById('trip-modal');
+            const title = document.getElementById('modal-title');
+            const form = document.getElementById('trip-form');
+            
+            if (trip) {
+                title.textContent = 'Edit Trip';
+                document.getElementById('trip-id').value = trip._id;
+                document.getElementById('destination').value = trip.destination;
+                document.getElementById('startDate').value = trip.startDate.split('T')[0];
+                document.getElementById('endDate').value = trip.endDate.split('T')[0];
+                document.getElementById('totalBudget').value = trip.totalBudget;
+            } else {
+                title.textContent = 'Add New Trip';
+                form.reset();
+                document.getElementById('trip-id').value = '';
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        function hideTripModal() {
+            document.getElementById('trip-modal').style.display = 'none';
+        }
+
+        // CRUD Logic
+        async function fetchTrips() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/trips`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const trips = await response.json();
+                renderTrips(trips);
+            } catch (error) {
+                console.error('Error fetching trips:', error);
+            }
+        }
+
+        function renderTrips(trips) {
+            const container = document.getElementById('trips-container');
+            const noTrips = document.getElementById('no-trips');
+
+            if (trips.length === 0) {
+                noTrips.style.display = 'block';
+                container.querySelectorAll('.trip-card').forEach(el => el.remove());
+                return;
+            }
+
+            noTrips.style.display = 'none';
+            container.innerHTML = '';
+            trips.forEach(trip => {
+                const card = document.createElement('div');
+                card.className = 'trip-card';
+                card.innerHTML = `
+                    <div class="trip-info" onclick="window.location.href='trip.html?id=${trip._id}'" style="cursor: pointer; flex: 1;">
+                        <h3>${trip.destination}</h3>
+                        <p>📅 ${new Date(trip.startDate).toLocaleDateString()} - ${new Date(trip.endDate).toLocaleDateString()}</p>
+                        <p style="margin-top: 0.5rem; font-weight: 600; color: var(--primary-color);">Budget: $${trip.totalBudget}</p>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button onclick="editTrip('${trip._id}')" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Edit</button>
+                        <button onclick="deleteTrip('${trip._id}')" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: #fee2e2; color: #ef4444;">Delete</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        document.getElementById('trip-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('trip-id').value;
+            const tripData = {
+                destination: document.getElementById('destination').value,
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                totalBudget: document.getElementById('totalBudget').value,
+            };
+
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API_BASE_URL}/trips/${id}` : `${API_BASE_URL}/trips`;
+
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(tripData)
+                });
+
+                if (response.ok) {
+                    hideTripModal();
+                    fetchTrips();
+                } else {
+                    alert('Error saving trip');
+                }
+            } catch (error) {
+                alert('Error saving trip');
+            }
+        });
+
+        async function editTrip(id) {
+            try {
+                // We could fetch a single trip, but for simplicity let's find it in local state or re-fetch all
+                const response = await fetch(`${API_BASE_URL}/trips`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const trips = await response.json();
+                const trip = trips.find(t => t._id === id);
+                if (trip) showTripModal(trip);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function deleteTrip(id) {
+            if (!confirm('Are you sure you want to delete this trip?')) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/trips/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) fetchTrips();
+            } catch (error) {
+                alert('Error deleting trip');
+            }
+        }
+
+        // Initial Load
+        fetchTrips();
+    </script>
+</body>
+</html>

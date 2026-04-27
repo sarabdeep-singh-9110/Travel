@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trip Details - TravelBudget</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <div class="container">
+            <a href="dashboard.html" class="logo">TravelBudget</a>
+            <div class="nav-links">
+                <a href="dashboard.html" style="font-weight: 500;">Dashboard</a>
+                <button id="logout-btn" class="btn btn-outline" style="padding: 0.4rem 1rem;">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="padding-top: 2rem;">
+        <div style="margin-bottom: 2rem;">
+            <a href="dashboard.html" style="color: var(--primary-color); font-weight: 500;">← Back to Trips</a>
+        </div>
+
+        <div id="trip-summary" class="dashboard-grid">
+            <div class="card">
+                <h3>Destination</h3>
+                <div class="value" id="summary-destination">-</div>
+            </div>
+            <div class="card">
+                <h3>Total Budget</h3>
+                <div class="value" id="summary-budget">$0</div>
+            </div>
+            <div class="card">
+                <h3>Spent So Far</h3>
+                <div class="value" id="summary-spent" style="color: var(--error-color);">$0</div>
+            </div>
+            <div class="card">
+                <h3>Remaining</h3>
+                <div class="value" id="summary-remaining" style="color: var(--success-color);">$0</div>
+            </div>
+        </div>
+
+        <div id="category-breakdown" class="card" style="margin-top: 1.5rem; display: none;">
+            <h3>Breakdown by Category</h3>
+            <div id="breakdown-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                <!-- Category breakdown will be loaded here -->
+            </div>
+        </div>
+
+        <div class="trips-header">
+            <h2>Expenses</h2>
+            <button class="btn btn-primary" onclick="showExpenseModal()">+ Add Expense</button>
+        </div>
+
+        <table class="expense-table">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Date</th>
+                    <th>Notes</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="expenses-body">
+                <!-- Expenses will be loaded here -->
+            </tbody>
+        </table>
+        <p id="no-expenses" style="text-align: center; padding: 2rem; color: var(--text-light); display: none;">No expenses recorded for this trip.</p>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <div id="expense-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="auth-container" style="margin: 0; width: 90%; max-width: 500px;">
+            <h2 id="modal-title">Add Expense</h2>
+            <form id="expense-form">
+                <input type="hidden" id="expense-id">
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category" required>
+                        <option value="Transport">Transport</option>
+                        <option value="Hotel">Hotel</option>
+                        <option value="Food">Food</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Miscellaneous">Miscellaneous</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="amount">Amount ($)</label>
+                    <input type="number" id="amount" required min="0.01" step="0.01" placeholder="e.g. 50.00">
+                </div>
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" id="date" required>
+                </div>
+                <div class="form-group">
+                    <label for="notes">Notes (Optional)</label>
+                    <textarea id="notes" rows="2" placeholder="e.g. Dinner at Paris Bistro"></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Save Expense</button>
+                    <button type="button" class="btn btn-outline" onclick="hideExpenseModal()" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = 'login.html';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const tripId = urlParams.get('id');
+
+        if (!tripId) window.location.href = 'dashboard.html';
+
+        let currentTrip = null;
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        });
+
+        // Modal Logic
+        function showExpenseModal(expense = null) {
+            const modal = document.getElementById('expense-modal');
+            const title = document.getElementById('modal-title');
+            const form = document.getElementById('expense-form');
+            
+            if (expense) {
+                title.textContent = 'Edit Expense';
+                document.getElementById('expense-id').value = expense._id;
+                document.getElementById('category').value = expense.category;
+                document.getElementById('amount').value = expense.amount;
+                document.getElementById('date').value = expense.date.split('T')[0];
+                document.getElementById('notes').value = expense.notes || '';
+            } else {
+                title.textContent = 'Add Expense';
+                form.reset();
+                document.getElementById('expense-id').value = '';
+                document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        function hideExpenseModal() {
+            document.getElementById('expense-modal').style.display = 'none';
+        }
+
+        // Fetch Data
+        async function loadTripDetails() {
+            try {
+                // Fetch trip info
+                const tripRes = await fetch(`${API_BASE_URL}/trips`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const trips = await tripRes.json();
+                currentTrip = trips.find(t => t._id === tripId);
+                
+                if (!currentTrip) {
+                    alert('Trip not found');
+                    window.location.href = 'dashboard.html';
+                    return;
+                }
+
+                document.getElementById('summary-destination').textContent = currentTrip.destination;
+                document.getElementById('summary-budget').textContent = `$${currentTrip.totalBudget}`;
+                
+                await loadExpenses();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function loadExpenses() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/expenses/${tripId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const expenses = await res.json();
+                renderExpenses(expenses);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function renderExpenses(expenses) {
+            const tbody = document.getElementById('expenses-body');
+            const noExpenses = document.getElementById('no-expenses');
+            const breakdownContainer = document.getElementById('category-breakdown');
+            const breakdownList = document.getElementById('breakdown-list');
+            
+            let totalSpent = 0;
+            const breakdown = {
+                'Transport': 0,
+                'Hotel': 0,
+                'Food': 0,
+                'Shopping': 0,
+                'Miscellaneous': 0
+            };
+
+            tbody.innerHTML = '';
+
+            if (expenses.length === 0) {
+                noExpenses.style.display = 'block';
+                breakdownContainer.style.display = 'none';
+            } else {
+                noExpenses.style.display = 'none';
+                breakdownContainer.style.display = 'block';
+                expenses.forEach(exp => {
+                    totalSpent += exp.amount;
+                    breakdown[exp.category] += exp.amount;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${exp.category}</td>
+                        <td>${new Date(exp.date).toLocaleDateString()}</td>
+                        <td>${exp.notes || '-'}</td>
+                        <td style="font-weight: 600;">$${exp.amount.toFixed(2)}</td>
+                        <td>
+                            <button onclick='editExpense(${JSON.stringify(exp)})' class="btn btn-outline" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">Edit</button>
+                            <button onclick="deleteExpense('${exp._id}')" class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; background: #fee2e2; color: #ef4444;">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Render Breakdown
+                breakdownList.innerHTML = '';
+                Object.keys(breakdown).forEach(cat => {
+                    if (breakdown[cat] > 0) {
+                        const item = document.createElement('div');
+                        item.style.padding = '0.5rem';
+                        item.style.background = '#f8fafc';
+                        item.style.borderRadius = '8px';
+                        item.innerHTML = `
+                            <div style="font-size: 0.8rem; color: var(--text-light);">${cat}</div>
+                            <div style="font-weight: 600;">$${breakdown[cat].toFixed(2)}</div>
+                        `;
+                        breakdownList.appendChild(item);
+                    }
+                });
+            }
+
+            // Update Summary Cards
+            document.getElementById('summary-spent').textContent = `$${totalSpent.toFixed(2)}`;
+            const remaining = currentTrip.totalBudget - totalSpent;
+            const remainingEl = document.getElementById('summary-remaining');
+            remainingEl.textContent = `$${remaining.toFixed(2)}`;
+            remainingEl.style.color = remaining < 0 ? 'var(--error-color)' : 'var(--success-color)';
+        }
+
+        document.getElementById('expense-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('expense-id').value;
+            const expenseData = {
+                tripId,
+                category: document.getElementById('category').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                date: document.getElementById('date').value,
+                notes: document.getElementById('notes').value
+            };
+
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API_BASE_URL}/expenses/${id}` : `${API_BASE_URL}/expenses`;
+
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(expenseData)
+                });
+
+                if (response.ok) {
+                    hideExpenseModal();
+                    loadExpenses();
+                } else {
+                    alert('Error saving expense');
+                }
+            } catch (error) {
+                alert('Error saving expense');
+            }
+        });
+
+        function editExpense(exp) {
+            showExpenseModal(exp);
+        }
+
+        async function deleteExpense(id) {
+            if (!confirm('Delete this expense?')) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/expenses/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) loadExpenses();
+            } catch (error) {
+                alert('Error deleting expense');
+            }
+        }
+
+        // Initial Load
+        loadTripDetails();
+    </script>
+</body>
+</html>
